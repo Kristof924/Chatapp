@@ -81,6 +81,9 @@ const Navbar = () => {
 
   return (
     <>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="ChatApp" />
       <nav className="navbar navbar-light bg-light flex-column align-items-start">
         <a className="navbar-brand">{username}</a>
         {showContacts && (
