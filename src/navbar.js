@@ -16,7 +16,15 @@ const Navbar = () => {
   const [active, setActive] = useState(null);
   const [uniqueKey, setUniqueKey] = useState(0);
   const [, forceUpdate] = useReducer(forceUpdateReducer, 0);
-  const [showContacts, setShowContacts] = useState(true); // Új állapot, hogy mobilon váltani lehessen
+  const [showContacts, setShowContacts] = useState(true);
+
+  // Egyszerűen állítsd be az isMobile értékét resize eseményre is, hogy reagáljon az ablakméret változásra
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleSearchChange = (event) => {
     const query = event.target.value;
@@ -37,7 +45,7 @@ const Navbar = () => {
     setSearchQuery('');
     setSuggestions([]);
     setUniqueKey(prevKey => prevKey + 1);
-    setShowContacts(false); // Ha chat indult, elrejti a kontaktlistát mobilon
+    setShowContacts(false);
   };
 
   useEffect(() => {
@@ -60,7 +68,7 @@ const Navbar = () => {
           console.error('There was an error!', error);
         });
       forceUpdate();
-    }, 1000); // Egy másodpercenként frissítés elég
+    }, 1000);
 
     return () => clearInterval(interval);
   }, []);
@@ -68,65 +76,82 @@ const Navbar = () => {
   const handleClick = (username) => {
     setUniqueKey(prevKey => prevKey + 1);
     setActive(username);
-    setShowContacts(false); // Mobilon elrejti a kontaktlistát
+    setShowContacts(false);
   };
 
   const handleBack = () => {
     setActive(null);
-    setShowContacts(true); // Vissza a kontaktlistához
+    setShowContacts(true);
   };
-
-  // Media query a mobil/desktop nézet kezelésére
-  const isMobile = window.innerWidth <= 768;
 
   return (
     <>
       <nav className="navbar navbar-light bg-light flex-column align-items-start">
-  <a className="navbar-brand">{username}</a>
-  {/* Csak mobilnézetben kötjük a megjelenítést a showContacts-hoz */}
-  {( !isMobile || showContacts ) && (
-    <form className="form-inline mt-2">
-      <input
-        className="form-control mr-sm-2"
-        type="search"
-        placeholder="Search"
-        aria-label="Search"
-        value={searchQuery}
-        onChange={handleSearchChange}
-      />
-    </form>
-  )}
-  {( !isMobile || showContacts ) && suggestions.length > 0 && (
-    <ul className="list-group mt-2">
-      {suggestions.map((suggestion, index) => (
-        <li
-          key={index}
-          className="list-group-item list-group-item-action"
-          onClick={() => handleSuggestionClick(suggestion)}
-        >
-          {suggestion}
-        </li>
-      ))}
-    </ul>
-  )}
-</nav>
+        <a className="navbar-brand">{username}</a>
 
-...
+        {showContacts && (
+          <form className="form-inline mt-2" onSubmit={e => e.preventDefault()}>
+            <input
+              className="form-control mr-sm-2"
+              type="search"
+              placeholder="Search"
+              aria-label="Search"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              autoComplete="off"
+            />
+          </form>
+        )}
 
-{/* Kontaktlista megjelenítése */}
-{(isMobile ? showContacts : true) && (
-  <div className="col-md-3 friends-list" style={{ borderRight: '1px solid #ddd', minHeight: '80vh', overflowY: 'auto' }}>
-    {user.map(user => (
-      <div
-        key={user.id}
-        className={`clickable-div ${active === user.username ? 'active' : ''}`}
-        onClick={() => handleClick(user.username)}
-      >
-        {user.username}
+        {showContacts && suggestions.length > 0 && (
+          <ul className="list-group mt-2">
+            {suggestions.map((suggestion, index) => (
+              <li
+                key={index}
+                className="list-group-item list-group-item-action"
+                onClick={() => handleSuggestionClick(suggestion)}
+              >
+                {suggestion}
+              </li>
+            ))}
+          </ul>
+        )}
+      </nav>
+
+      <div className="container-fluid">
+        <div className="row">
+          {/* Kontaktlista megjelenítése: desktopon mindig, mobilon ha showContacts true */}
+          {( !isMobile || showContacts ) && (
+            <div className="col-md-3 friends-list" style={{ borderRight: '1px solid #ddd', minHeight: '80vh', overflowY: 'auto' }}>
+              {user.map(user => (
+                <div
+                  key={user.id}
+                  className={`clickable-div ${active === user.username ? 'active' : ''}`}
+                  onClick={() => handleClick(user.username)}
+                >
+                  {user.username}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Chat megjelenítése, ha van aktív chat */}
+          {active && (
+            <div className={isMobile ? "col-12" : "col-md-9"}>
+              {/* Mobilon vissza gomb */}
+              {isMobile && (
+                <button
+                  className="btn btn-secondary mb-2"
+                  onClick={handleBack}
+                >
+                  ← Vissza
+                </button>
+              )}
+              <Chat key={uniqueKey} username={active} />
+            </div>
+          )}
+        </div>
       </div>
-    ))}
-  </div>
-)}
     </>
   );
 };
