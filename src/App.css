@@ -82,9 +82,4 @@ body, html {
     max-height: 80vh; /* vagy 85vh, hogy ne lógjon ki */
     overflow-y: auto;
   }
-  .friends-list {
-  max-height: 80vh;
-  overflow-y: scroll;
-}
-
 }
