@@ -70,34 +70,3 @@ a:hover {
     padding: 10px;
     border-bottom: 1px solid #ced4da;
 }
-
-/* Alapból a friends-list ne legyen látható mobilon */
-@media (max-width: 767px) {
-  .friends-list {
-    display: none;
-    height: auto; /* ne foglaljon helyet */
-  }
-  .friends-list.active {
-    display: block; /* ha van valami active osztály, akkor megjelenik */
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: white;
-    z-index: 10;
-    overflow-y: auto;
-    border-right: none;
-  }
-  .chat-box {
-    height: calc(100vh - 56px); /* alkalmazkodik a mobil magasságához, 56px pl a navbar magasság */
-  }
-}
-
-/* Desktopon a friends-list marad mindig látható */
-@media (min-width: 768px) {
-  .friends-list {
-    display: block;
-    height: 100vh;
-  }
-}
