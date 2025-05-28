@@ -84,7 +84,7 @@ body, html {
   }
   .friends-list {
   max-height: 80vh;
-  overflow-y: auto;
+  overflow-y: scroll;
 }
 
 }
