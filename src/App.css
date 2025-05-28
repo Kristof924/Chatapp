@@ -70,16 +70,3 @@ a:hover {
     padding: 10px;
     border-bottom: 1px solid #ced4da;
 }
-
-/* Globálisan tiltjuk a vízszintes görgetést */
-body, html {
-  overflow-x: hidden;
-}
-
-/* Chat-box magasság beállítása iPhone SE mérethez vagy hasonlóhoz */
-@media (max-width: 375px) {
-  .chat-box {
-    max-height: 80vh; /* vagy 85vh, hogy ne lógjon ki */
-    overflow-y: auto;
-  }
-}
