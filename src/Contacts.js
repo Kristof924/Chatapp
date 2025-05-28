@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useReducer} from 'react';
+import React, { useEffect, useState, useReducer } from 'react';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axios from 'axios';
@@ -8,13 +8,13 @@ const API_URL = "https://chatservice-nbjs.onrender.com/contacts/" + sessionStora
 const forceUpdateReducer = (state) => state + 1;
 
 const Contacts = () => {
-    const [user, setUsers] = useState([]);
-    const [active, setActive] = useState();
-    const [uniqueKey, setUniqueKey] = useState(0);
-    const [, forceUpdate] = useReducer(forceUpdateReducer, 0);
+  const [users, setUsers] = useState([]);
+  const [active, setActive] = useState();
+  const [uniqueKey, setUniqueKey] = useState(0);
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
+  const [, forceUpdate] = useReducer(forceUpdateReducer, 0);
 
-  
-    useEffect(() => {
+  useEffect(() => {
     axios.get(API_URL)
       .then(response => {
         setUsers(response.data);
@@ -24,41 +24,73 @@ const Contacts = () => {
       });
   }, []);
 
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
-     if(sessionStorage.getItem('click')){
+      if (sessionStorage.getItem('click')) {
         setUniqueKey(prevKey => prevKey + 1);
-       setActive(sessionStorage.getItem('newChat'));
-       sessionStorage.setItem('click', false)
-       console.log(sessionStorage.getItem('newChat'))
-     }
-        forceUpdate();
-    }, 100); // Refresh every second
+        const newChat = sessionStorage.getItem('newChat');
+        setActive(newChat);
+        sessionStorage.setItem('click', false);
+        console.log(newChat);
+      }
+      forceUpdate();
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
 
-    return () => clearInterval(interval); // Cleanup on component unmount
-}, []);
-  
-  const handleClick = async (username) => {
+  const handleClick = (username) => {
     setUniqueKey(prevKey => prevKey + 1);
     setActive(username);
     sessionStorage.setItem('reciver', username);
-};
+  };
 
-    
+  const handleBack = () => {
+    setActive(null);
+  };
+
   return (
-    <div class="container-fluid">
-        <div class="row">
-          <div class="col-md-3 friends-list">
-          {user.map(user => (
-          <div key={user.id} className={`clickable-div ${active === user.username ? 'active' : ''}`} 
-          onClick={() => handleClick(user.username)}>{user.username}</div>
-        ))}
+    <div className="container-fluid">
+      <div className="row no-gutters flex-nowrap full-height">
+
+        {(!isMobileView || !active) && (
+          <div className="col-12 col-md-3 friends-list">
+            <h5 className="p-2">Kontaktok</h5>
+            {users.map(user => (
+              <div
+                key={user.id}
+                className={`clickable-div ${active === user.username ? 'active' : ''}`}
+                onClick={() => handleClick(user.username)}
+              >
+                {user.username}
+              </div>
+            ))}
           </div>
-          {active && <Chat key={uniqueKey} username={active} />}
-        </div>
+        )}
+
+        {(!isMobileView || active) && (
+          <div className="col-12 col-md-9">
+            {isMobileView && active && (
+              <div className="p-2 bg-light border-bottom">
+                <button className="btn btn-sm btn-outline-secondary" onClick={handleBack}>
+                  ← Vissza
+                </button>
+              </div>
+            )}
+            {active && <Chat key={uniqueKey} username={active} />}
+          </div>
+        )}
+
       </div>
-      
-  );}
+    </div>
+  );
+};
 
 export default Contacts;

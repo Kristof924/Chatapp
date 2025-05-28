@@ -1,96 +1,95 @@
-import React, { useEffect, useState, useReducer } from 'react';
-import './App.css';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import React, { useEffect, useState, useReducer, useRef } from 'react';
+import './styles.css';
 import axios from 'axios';
-import Chat from './Chat';
 
-const API_URL = "https://chatservice-nbjs.onrender.com/contacts/" + sessionStorage.getItem('username');
 const forceUpdateReducer = (state) => state + 1;
 
-const Contacts = () => {
-  const [users, setUsers] = useState([]);
-  const [active, setActive] = useState();
-  const [uniqueKey, setUniqueKey] = useState(0);
-  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
-  const [, forceUpdate] = useReducer(forceUpdateReducer, 0);
+const Chat = ({ username }) => {
+    const API_URL = "https://chatservice-nbjs.onrender.com/api/messages/" + sessionStorage.getItem('username') + "/" + username;
+    const [chats, setChat] = useState([]);
+    const [send, setSend] = useState('');
+    const [, forceUpdate] = useReducer(forceUpdateReducer, 0);
+    const chatBoxRef = useRef(null);
 
-  useEffect(() => {
-    axios.get(API_URL)
-      .then(response => {
-        setUsers(response.data);
-      })
-      .catch(error => {
-        console.error('There was an error!', error);
-      });
-  }, []);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobileView(window.innerWidth < 768);
+    const scrollToBottom = () => {
+        chatBoxRef.current?.scrollTo({
+            top: chatBoxRef.current.scrollHeight,
+            behavior: 'auto',
+        });
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (sessionStorage.getItem('click')) {
-        setUniqueKey(prevKey => prevKey + 1);
-        const newChat = sessionStorage.getItem('newChat');
-        setActive(newChat);
-        sessionStorage.setItem('click', false);
-        console.log(newChat);
-      }
-      forceUpdate();
-    }, 100);
-    return () => clearInterval(interval);
-  }, []);
+    useEffect(() => {
+        const interval = setInterval(() => {
+            axios.get(API_URL)
+                .then(response => {
+                    setChat(response.data);
+                    scrollToBottom();
+                })
+                .catch(error => {
+                    console.error('There was an error!', error);
+                });
+            forceUpdate();
+            scrollToBottom();
+        }, 100); // Refresh every second
 
-  const handleClick = (username) => {
-    setUniqueKey(prevKey => prevKey + 1);
-    setActive(username);
-    sessionStorage.setItem('reciver', username);
-  };
+        return () => clearInterval(interval); // Cleanup on component unmount
+    }, []);
 
-  const handleBack = () => {
-    setActive(null);
-  };
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        const data = { send };
+        if(send.length>0){
+        try {
+            const response = await fetch('https://chatservice-nbjs.onrender.com/api/send/' + sessionStorage.getItem('username') +'/' + username, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
 
-  return (
-    <div className="container-fluid">
-      <div className="row no-gutters flex-nowrap full-height">
+            const result = await response.text();
+            console.log('Response from backend:', result);
+            
+            setSend(''); // Clear input after sending message
+        } catch (error) {
+            console.error('Error:', error);
+        }}
+    };
 
-        {(!isMobileView || !active) && (
-          <div className="col-12 col-md-3 friends-list">
-            <h5 className="p-2">Kontaktok</h5>
-            {users.map(user => (
-              <div
-                key={user.id}
-                className={`clickable-div ${active === user.username ? 'active' : ''}`}
-                onClick={() => handleClick(user.username)}
-              >
-                {user.username}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {(!isMobileView || active) && (
-          <div className="col-12 col-md-9">
-            {isMobileView && active && (
-              <div className="p-2 bg-light border-bottom">
-                <button className="btn btn-sm btn-outline-secondary" onClick={handleBack}>
-                  ← Vissza
-                </button>
-              </div>
-            )}
-            {active && <Chat key={uniqueKey} username={active} />}
-          </div>
-        )}
-
-      </div>
-    </div>
-  );
+    return (
+        <div className="col-md-9">
+            <div className="card mt-5">
+                <div className="card-body chat-box d-flex flex-column" id="chatMessages" ref={chatBoxRef}>
+                    {chats.map((chat, index) => (
+                        <div
+                            key={index}
+                            className={chat.sender === 1 ? 'chat-message bot' : chat.sender === 2 ? 'chat-message user' : 'default-text'}
+                        >
+                            {chat.chat}
+                        </div>
+                    ))}
+                </div>
+                <div className="card-footer">
+                    <form id="chatForm" onSubmit={handleSubmit}>
+                        <div className="input-group">
+                            <input
+                                type="text"
+                                id="messageInput"
+                                value={send}
+                                onChange={(e) => setSend(e.target.value)}
+                                className="form-control"
+                                placeholder="Írj egy üzenetet..."
+                            />
+                            <div className="input-group-append">
+                                <button className="btn btn-primary" type="submit">SEND</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
 };
 
-export default Contacts;
+export default Chat;
